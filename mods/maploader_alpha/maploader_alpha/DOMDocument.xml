@@ -289,12 +289,20 @@ function injectBuildings(buildingsData:Array) {
 
 function injectObjects(input:String) {
 	try {
+		mapDataString = "";
+		units = new Array();
+		buildings = new Array();
+
 		mapDataJsonObject = JSON.parse(input);
 		var o:Object = mapDataJsonObject;
 		Log("Title = " + o["Title"]);
 		
 		// Replace the default access code with the one from this map.
-		game.panel.codes[1338] = o["AccessCode"];
+		if (o["AccessCode"] != undefined) {
+			game.panel.codes[1338] = o["AccessCode"];
+		} else {
+			game.panel.codes[1338] = "custom";
+		}
 		
 		var mapW:Number = 0;
 		var mapH:Number = 0;
@@ -451,6 +459,16 @@ function CACMod_OnGameMenu():Void {
 		
 		var hook2:Object = wrapper.addPostHook(game.LevelStats, LevelStatsHook);
 		game.LevelStats = hook2.override;
+		
+		var hookEnterCode:Object = wrapper.addPostHook(game.panel.enterCode,
+			function(code) {
+				if (code.indexOf("{") == 0) {
+					injectObjects(code);
+					game.panel.enterCode(game.panel.codes[1338]);
+				}
+			}
+		);
+		game.panel.enterCode = hookEnterCode.override;
 		
 		mapDataJsonString = getMapData();
 		if (mapDataJsonString != null) {
